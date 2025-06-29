@@ -294,3 +294,181 @@ void findCoreCourses(CourseGraph* graph, ProgramStructure* program) {
 
     free(dependencyCount);
 }
+void mainMenu() {
+    CourseGraph* graph = (CourseGraph*)malloc(sizeof(CourseGraph));
+    graph->capacity = 100;
+    graph->size = 0;
+    graph->courses = (Course**)calloc(graph->capacity, sizeof(Course*));
+
+    ProgramStructure* program = NULL;
+
+    int choice;
+    do {
+        printf("\n========== 教学管理系统 ==========\n");
+        printf("1. 添加课程\n");
+        printf("2. 删除课程\n");
+        printf("3. 修改课程信息\n");
+        printf("4. 查询课程信息\n");
+        printf("5. 查看选课学生\n");
+        printf("6. 查看先修课程\n");
+        printf("7. 学习路径最短路径查询\n");
+        printf("8. 保存课程结构到文件\n");
+        printf("9. 从文件加载课程结构\n");
+        printf("10. 查找专业核心课程\n");
+        printf("0. 退出系统\n");
+        printf("请输入操作编号: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1: {
+                // 示例添加课程
+                Course* course = (Course*)malloc(sizeof(Course));
+                course->courseId = 101;
+                course->courseName = strdup("数据结构");
+                course->department = strdup("计算机学院");
+                course->major = strdup("软件工程");
+                course->creditHours = 4;
+                course->prerequisites = NULL;
+                course->enrolledStudents = NULL;
+                course->studentCount = 0;
+
+                addCourse(graph, course);
+                printf("课程添加成功。\n");
+                break;
+            }
+            case 2: {
+                int id;
+                printf("请输入要删除的课程ID: ");
+                scanf("%d", &id);
+                Course* target = findCourseById(graph, id);
+                if (target != NULL) {
+                    deleteCourse(graph, target);
+                    printf("课程已删除。\n");
+                } else {
+                    printf("未找到该课程。\n");
+                }
+                break;
+            }
+            case 3: {
+                int id;
+                printf("请输入要修改的课程ID: ");
+                scanf("%d", &id);
+                Course* target = findCourseById(graph, id);
+                if (target != NULL) {
+                    updateCourse(target, "高级数据结构", "计算机学院", "软件工程", 4);
+                    printf("课程信息已更新。\n");
+                } else {
+                    printf("未找到该课程。\n");
+                }
+                break;
+            }
+            case 4: {
+                int id;
+                printf("请输入要查询的课程ID: ");
+                scanf("%d", &id);
+                Course* target = findCourseById(graph, id);
+                if (target != NULL) {
+                    printf("课程名称: %s\n", target->courseName);
+                    printf("所属学院: %s\n", target->department);
+                    printf("所属专业: %s\n", target->major);
+                    printf("学分: %d\n", target->creditHours);
+                } else {
+                    printf("未找到该课程。\n");
+                }
+                break;
+            }
+            case 5: {
+                int id;
+                printf("请输入课程ID以查看选课学生: ");
+                scanf("%d", &id);
+                Course* target = findCourseById(graph, id);
+                if (target != NULL) {
+                    viewEnrolledStudents(target);
+                } else {
+                    printf("未找到该课程。\n");
+                }
+                break;
+            }
+            case 6: {
+                int id;
+                printf("请输入课程ID以查看先修课程: ");
+                scanf("%d", &id);
+                Course* target = findCourseById(graph, id);
+                if (target != NULL) {
+                    viewPrerequisites(target);
+                } else {
+                    printf("未找到该课程。\n");
+                }
+                break;
+            }
+            case 7: {
+                int startId, targetId;
+                printf("请输入起始课程ID: ");
+                scanf("%d", &startId);
+                printf("请输入目标课程ID: ");
+                scanf("%d", &targetId);
+
+                Course* start = findCourseById(graph, startId);
+                Course* target = findCourseById(graph, targetId);
+
+                if (start && target) {
+                    shortestPathToConcept(graph, start, target);
+                } else {
+                    printf("起始或目标课程不存在。\n");
+                }
+                break;
+            }
+            case 8: {
+                if (program == NULL) {
+                    program = (ProgramStructure*)malloc(sizeof(ProgramStructure));
+                    program->department = strdup("计算机学院");
+                    program->major = strdup("软件工程");
+                    program->courses = graph->courses;
+                    program->count = graph->size;
+                }
+                saveProgramStructureToFile(program, "software_engineering_courses.json");
+                printf("课程结构已保存到文件。\n");
+                break;
+            }
+            case 9: {
+                if (program != NULL) {
+                    free(program);
+                }
+                program = loadProgramStructureFromFile("software_engineering_courses.json");
+                if (program != NULL) {
+                    graph->courses = program->courses;
+                    graph->size = program->count;
+                    printf("课程结构已从文件加载。\n");
+                } else {
+                    printf("加载失败，请检查文件是否存在。\n");
+                }
+                break;
+            }
+            case 10: {
+                if (program == NULL) {
+                    printf("请先加载或创建专业课程结构。\n");
+                    break;
+                }
+                findCoreCourses(graph, program);
+                break;
+            }
+            case 0:
+                printf("退出系统。\n");
+                break;
+            default:
+                printf("无效的操作编号，请重新输入。\n");
+        }
+    } while (choice != 0);
+
+    // 清理资源
+    for (int i = 0; i < graph->size; i++) {
+        free(graph->courses[i]);
+    }
+    free(graph->courses);
+    free(graph);
+    if (program != NULL) {
+        free(program);
+    }
+
+    exit(0);
+}
